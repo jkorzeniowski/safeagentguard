@@ -1,121 +1,135 @@
-# app/run_agent.py
+"""Agent execution script for running inside Docker containers.
 
-import os
+This script is the entry point for agent execution in the sandbox.
+It reads configuration from environment/stdin and outputs JSON results.
+"""
+
 import json
+import logging
+import os
 import sys
-from typing import Any, Dict
 
-import requests  # to be stubbed if the agent will call external API
+from src.agents.base import BaseAgent
+from src.exceptions import AgentConfigError, AgentExecutionError
 
-
-"""
-run_agent.py
-
-This script is executed INSIDE the sandboxed Docker container.
-Its responsibilities:
-
-1. Load agent configuration from environment (AGENT_CONFIG, TEST_ID, SANDBOX_RULES).
-2. Instantiate the agent (e.g., a simple OpenAI- or LangChain-based agent).
-3. Expose a very small control surface for the sandbox:
-   - receive a prompt/task (via stdin or env)
-   - run the agent
-   - print the result in a structured JSON format to stdout.
-
-The sandbox supervisor (outside the container) interacts with this script
-by:
-- starting the container with proper env variables
-- sending scenario-specific prompts
-- reading the JSON output and checking for policy violations.
-"""
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
-def load_agent_config() -> Dict[str, Any]:
-    """Load agent configuration from environment."""
-    raw = os.environ.get("AGENT_CONFIG", "{}")
-    try:
-        cfg = json.loads(raw) if isinstance(raw, str) else raw
-    except json.JSONDecodeError:
-        cfg = {}
-    return cfg
+def get_agent_from_config(config: dict) -> BaseAgent:
+    """Create an agent instance from configuration.
 
+    Args:
+        config: Agent configuration dictionary with 'type' key.
 
-def load_sandbox_rules() -> Dict[str, Any]:
-    """Parse sandbox rules (can be used inside the agent wrapper)."""
-    raw = os.environ.get("SANDBOX_RULES", "")
-    # Example: "read_only_db,no_network_outbound,max_cpu_1core"
-    rules = [r.strip() for r in raw.split(",") if r.strip()]
-    return {"rules": rules}
+    Returns:
+        A BaseAgent instance.
 
+    Raises:
+        AgentConfigError: If agent type is not supported or config is invalid.
+    """
+    from src.agents.mock import MockAgent, SafeMockAgent, VulnerableMockAgent
 
-def get_test_context() -> Dict[str, Any]:
-    """Get test-level context such as TEST_ID and scenario input."""
-    test_id = os.environ.get("TEST_ID", "unknown-test")
-    # Scenario input can be passed via STDIN (preferred) or ENV
-    if not sys.stdin.isatty():
-        stdin_data = sys.stdin.read().strip()
-        if stdin_data:
-            try:
-                scenario_input = json.loads(stdin_data)
-            except json.JSONDecodeError:
-                scenario_input = {"raw_input": stdin_data}
-        else:
-            scenario_input = {}
+    if not isinstance(config, dict):
+        raise AgentConfigError("Agent config must be a dictionary")
+
+    agent_type = config.get("type", "mock")
+
+    if agent_type == "mock":
+        return MockAgent(default_response=config.get("response", "I cannot help."))
+    elif agent_type == "mock_vulnerable":
+        return VulnerableMockAgent()
+    elif agent_type == "mock_safe":
+        return SafeMockAgent()
+    elif agent_type == "openai":
+        from src.agents.openai import OpenAIAgent
+
+        api_key = config.get("api_key", os.environ.get("OPENAI_API_KEY", ""))
+        if not api_key:
+            raise AgentConfigError(
+                "OpenAI agent requires 'api_key' in config or OPENAI_API_KEY env var"
+            )
+        return OpenAIAgent(
+            api_key=api_key,
+            model=config.get("model", "gpt-4o-mini"),
+            system_prompt=config.get("system_prompt"),
+        )
     else:
-        # Fallback: scenario input from env
-        scenario_input_raw = os.environ.get("SCENARIO_INPUT", "{}")
-        try:
-            scenario_input = json.loads(scenario_input_raw)
-        except json.JSONDecodeError:
-            scenario_input = {}
-    return {
-        "test_id": test_id,
-        "scenario_input": scenario_input,
-    }
+        raise AgentConfigError(f"Unsupported agent type: {agent_type}")
 
 
-def dummy_agent_call(prompt: str, config: Dict[str, Any]) -> str:
+def run_agent(agent_config: dict, prompt: str) -> dict:
+    """Execute an agent with the given prompt.
+
+    Args:
+        agent_config: Configuration for creating the agent.
+        prompt: The prompt to send to the agent.
+
+    Returns:
+        Dictionary with 'output', 'success', and optional 'error' keys.
     """
-    Replace this with your real agent logic.
-
-    For now, this is a very simple echo-like agent with a fake 'unsafe' behavior:
-    - If prompt contains the word 'DELETE_DB', it pretends to execute a dangerous action.
-    """
-    # You could plug here:
-    # - OpenAI ChatCompletion
-    # - LangChain agent
-    # - Any custom tool-using agent
-    if "DELETE_DB" in prompt:
-        return "EXECUTING: rm -rf /prod-db  # DANGEROUS_ACTION_SIMULATED"
-    return f"AGENT_RESPONSE: {prompt[::-1]}"  # silly reverse-echo
+    try:
+        agent = get_agent_from_config(agent_config)
+        response = agent.run(prompt)
+        return {
+            "output": response.output,
+            "success": True,
+            "raw_response": response.raw_response,
+        }
+    except AgentConfigError as e:
+        logger.error("Invalid agent configuration: %s", e)
+        return {
+            "output": "",
+            "success": False,
+            "error": f"Configuration error: {e}",
+        }
+    except AgentExecutionError as e:
+        logger.error("Agent execution failed: %s", e, exc_info=True)
+        return {
+            "output": "",
+            "success": False,
+            "error": f"Execution error: {e}",
+        }
+    except (TypeError, KeyError, AttributeError) as e:
+        logger.error("Invalid input or response format: %s", e, exc_info=True)
+        return {
+            "output": "",
+            "success": False,
+            "error": f"Format error: {e}",
+        }
 
 
 def main():
-    agent_config = load_agent_config()
-    sandbox_rules = load_sandbox_rules()
-    ctx = get_test_context()
+    """Main entry point for container execution.
 
-    scenario_input = ctx["scenario_input"]
-    prompt = scenario_input.get("prompt", "Hello from SafeAgentGuard sandbox.")
-
-    # Here you would construct your real agent using agent_config
-    # e.g., OpenAI model, tools, etc.
-    # For now, we call a dummy agent:
-    agent_output = dummy_agent_call(prompt, agent_config)
-
-    # You can add structured metadata for sandbox analysis:
-    result = {
-        "test_id": ctx["test_id"],
-        "prompt": prompt,
-        "agent_output": agent_output,
-        "agent_config": agent_config,
-        "sandbox_rules": sandbox_rules,
-        # Optional: a list of "actions" the agent tried to perform
-        # so the outer sandbox can analyze them.
-        "actions": [],
+    Reads JSON input from stdin with format:
+    {
+        "agent_config": {...},
+        "prompt": "..."
     }
 
-    # Print as a single JSON line for the sandbox supervisor to parse
-    print(json.dumps(result))
+    Outputs JSON result to stdout.
+    """
+    try:
+        input_data = json.loads(sys.stdin.read())
+        agent_config = input_data.get("agent_config", {})
+        prompt = input_data.get("prompt", "")
+
+        logger.info("Running agent with type: %s", agent_config.get("type", "unknown"))
+        result = run_agent(agent_config, prompt)
+
+        print(json.dumps(result))
+    except json.JSONDecodeError as e:
+        logger.error("Invalid JSON input: %s", e)
+        print(json.dumps({"success": False, "error": f"Invalid JSON input: {e}"}))
+        sys.exit(1)
+    except (KeyError, TypeError) as e:
+        logger.error("Malformed input data: %s", e)
+        print(json.dumps({"success": False, "error": f"Malformed input: {e}"}))
+        sys.exit(1)
 
 
 if __name__ == "__main__":

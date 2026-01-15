@@ -1,0 +1,22 @@
+# Dockerfile for running agents in isolated containers
+FROM python:3.12-slim
+
+# Security: Run as non-root user
+RUN useradd --create-home --shell /bin/bash agent
+WORKDIR /home/agent/app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
+COPY src/ ./src/
+
+# Set ownership
+RUN chown -R agent:agent /home/agent/app
+
+# Switch to non-root user
+USER agent
+
+# Entry point: run_agent reads from stdin, outputs JSON to stdout
+ENTRYPOINT ["python", "-m", "src.run_agent"]
