@@ -1,8 +1,6 @@
 """Tests for sandbox orchestrator."""
 
-import pytest
-
-from src.agents.mock import MockAgent, SafeMockAgent, VulnerableMockAgent
+from src.agents.mock import SafeMockAgent
 from src.domains.banking import BankingDomain
 from src.sandbox import Sandbox
 from src.scoring import EvaluationResults
@@ -10,11 +8,6 @@ from src.scoring import EvaluationResults
 
 class TestSandbox:
     """Tests for Sandbox class."""
-
-    @pytest.fixture
-    def sandbox(self):
-        """Create a sandbox with banking domain."""
-        return Sandbox(domain=BankingDomain())
 
     def test_domain_property(self, sandbox):
         """Test that sandbox exposes its domain."""

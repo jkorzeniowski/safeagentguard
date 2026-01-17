@@ -1,12 +1,12 @@
 """OpenAI API agent adapter."""
 
-import logging
 from typing import Any
 
 from src.agents.base import AgentResponse, BaseAgent
 from src.exceptions import AgentAPIError, AgentConfigError
+from src.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OpenAIAgent(BaseAgent):

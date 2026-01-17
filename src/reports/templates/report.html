@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeAgentGuard Safety Report - {{ domain_name | title }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .report {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #1a1a2e;
+            color: white;
+            padding: 2rem;
+        }
+        .header h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .header .meta {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .summary {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .score {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+        .score.pass { color: #22c55e; }
+        .score.fail { color: #ef4444; }
+        .score-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .stats { text-align: right; }
+        .stats .status {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+        }
+        .stats .status.pass { background: #dcfce7; color: #166534; }
+        .stats .status.fail { background: #fee2e2; color: #991b1b; }
+        .stats .breakdown { color: #666; margin-top: 0.5rem; }
+        .failed-list {
+            padding: 1rem 2rem;
+            background: #fef2f2;
+            border-bottom: 1px solid #fecaca;
+        }
+        .failed-list h3 { color: #991b1b; font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .failed-list ul { margin-left: 1.5rem; color: #b91c1c; }
+        .scenarios { padding: 1rem 0; }
+        .scenarios h2 {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .scenario {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #eee;
+        }
+        .scenario:last-child { border-bottom: none; }
+        .scenario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .scenario-name { font-weight: 600; font-size: 1rem; }
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge.pass { background: #dcfce7; color: #166534; }
+        .badge.fail { background: #fee2e2; color: #991b1b; }
+        .scenario-content { font-size: 0.9rem; }
+        .scenario-content dt {
+            font-weight: 600;
+            color: #666;
+            margin-top: 0.75rem;
+        }
+        .scenario-content dd {
+            margin-top: 0.25rem;
+            padding: 0.75rem;
+            background: #f9fafb;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .evidence {
+            background: #fef2f2 !important;
+            border-left: 3px solid #ef4444;
+        }
+        .footer {
+            padding: 1rem 2rem;
+            background: #f9fafb;
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="report">
+        <div class="header">
+            <h1>SafeAgentGuard Safety Report</h1>
+            <div class="meta">
+                <span>Domain: {{ domain_name | title }}</span>
+                <span>Generated: {{ generated_at }}</span>
+            </div>
+        </div>
+
+        <div class="summary">
+            <div>
+                <div class="score {{ 'pass' if passed else 'fail' }}">{{ overall_score }}/100</div>
+                <div class="score-label">Safety Score</div>
+            </div>
+            <div class="stats">
+                <div class="status {{ 'pass' if passed else 'fail' }}">
+                    {{ 'PASSED' if passed else 'FAILED' }}
+                </div>
+                <div class="breakdown">
+                    {{ passed_count }}/{{ total_count }} scenarios passed
+                </div>
+            </div>
+        </div>
+
+        {% if failed_scenarios %}
+        <div class="failed-list">
+            <h3>Failed Scenarios</h3>
+            <ul>
+                {% for name in failed_scenarios %}
+                <li>{{ name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="scenarios">
+            <h2>Scenario Details</h2>
+            {% for result in scenario_results %}
+            <div class="scenario">
+                <div class="scenario-header">
+                    <span class="scenario-name">{{ result.scenario.name }}</span>
+                    <span class="badge {{ 'pass' if result.passed else 'fail' }}">
+                        {{ 'PASS' if result.passed else 'FAIL' }}
+                    </span>
+                </div>
+                <dl class="scenario-content">
+                    <dt>Attack Prompt</dt>
+                    <dd>{{ result.scenario.attack_prompt }}</dd>
+                    <dt>Agent Response</dt>
+                    <dd>{{ result.agent_response }}</dd>
+                    {% if result.evidence %}
+                    <dt>Evidence Found</dt>
+                    <dd class="evidence">{{ result.evidence }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="footer">
+            Generated by SafeAgentGuard | <a href="https://github.com/safeagentguard">github.com/safeagentguard</a>
+        </div>
+    </div>
+</body>
+</html>

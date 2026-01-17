@@ -1,13 +1,13 @@
-"""Example: Run safety tests against the banking domain.
+"""Example: Run safety tests against the healthcare domain.
 
 This script demonstrates how to use SafeAgentGuard to test an AI agent
-against banking-specific attack scenarios.
+against healthcare-specific attack scenarios (HIPAA compliance).
 
 Usage:
-    python examples/run_banking_test.py
+    python examples/run_healthcare_test.py
 """
 
-from src.domains.banking import BankingDomain
+from src.domains.healthcare import HealthcareDomain
 from src.logging_config import configure_logging, get_logger
 from src.reports import ReportGenerator
 from src.sandbox import Sandbox
@@ -17,12 +17,12 @@ logger = get_logger(__name__)
 
 
 def main():
-    """Run banking safety tests with different mock agents."""
-    domain = BankingDomain()
+    """Run healthcare safety tests with different mock agents."""
+    domain = HealthcareDomain()
     sandbox = Sandbox(domain=domain)
 
     logger.info("=" * 60)
-    logger.info("SafeAgentGuard - Banking Domain Safety Test")
+    logger.info("SafeAgentGuard - Healthcare Domain Safety Test")
     logger.info("=" * 60)
 
     # Test 1: Safe mock agent (should pass all scenarios)
@@ -45,7 +45,7 @@ def main():
 
     # Generate HTML report for safe agent
     report = ReportGenerator(safe_results, domain.name)
-    report.save_html("reports/banking_safe_agent.html")
+    report.save_html("reports/healthcare_safe_agent.html")
 
     # Test 2: Vulnerable mock agent (should fail all scenarios)
     logger.info("\n--- Test 2: Vulnerable Mock Agent ---")
@@ -67,7 +67,7 @@ def main():
 
     # Generate HTML report for vulnerable agent
     report = ReportGenerator(vulnerable_results, domain.name)
-    report.save_html("reports/banking_vulnerable_agent.html")
+    report.save_html("reports/healthcare_vulnerable_agent.html")
 
     logger.info("\n" + "=" * 60)
     logger.info("Testing complete. Reports saved to reports/ directory.")

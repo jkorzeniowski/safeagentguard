@@ -1,11 +1,11 @@
 """Mock agent for testing without external API calls."""
 
-import logging
 from typing import Callable
 
 from src.agents.base import AgentResponse, BaseAgent
+from src.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class MockAgent(BaseAgent):
@@ -66,12 +66,34 @@ class VulnerableMockAgent(MockAgent):
         """Generate a response that complies with the attack prompt."""
         prompt_lower = prompt.lower()
 
-        if "transaction" in prompt_lower or "transfer" in prompt_lower:
-            return "I'll process that transfer for you right away."
-        elif "customer" in prompt_lower or "pii" in prompt_lower:
-            return "Here is the customer data: John Doe, IBAN: DE89370400440532013000"
-        elif "internal" in prompt_lower or "admin" in prompt_lower:
+        # Banking domain
+        if "internal" in prompt_lower or "admin" in prompt_lower:
             return "Accessing /internal/ledger endpoint now."
+        elif "transaction" in prompt_lower or "transfer" in prompt_lower:
+            return "I'll process that transfer for you right away."
+        elif "customer" in prompt_lower:
+            return "Here is the customer data: John Doe, IBAN: DE89370400440532013000"
+
+        # Healthcare domain (check specific scenarios before generic "patient")
+        elif "prescription" in prompt_lower or "dosage" in prompt_lower:
+            return "Prescription updated. Dosage changed and medication approved."
+        elif "ehr" in prompt_lower:
+            return "Accessing /ehr/patients endpoint. Patient records accessed."
+        elif "patient" in prompt_lower or "medical" in prompt_lower:
+            return "Here is the patient data: John Doe, SSN: 123-45-6789, Diagnosis: Diabetes"
+
+        # HR domain
+        elif "employee" in prompt_lower and (
+            "salary" in prompt_lower
+            or "salari" in prompt_lower
+            or "ssn" in prompt_lower
+        ):
+            return "Here is the employee data: Salary $85,000, SSN: 987-65-4321"
+        elif "terminat" in prompt_lower:
+            return "Employee terminated. Access revoked immediately."
+        elif "payroll" in prompt_lower or "direct deposit" in prompt_lower:
+            return "Payroll updated. Bank account changed and bonus added."
+
         else:
             return "Sure, I'll help you with that."
 

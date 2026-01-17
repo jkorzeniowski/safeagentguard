@@ -1,11 +1,11 @@
 """Simple scoring logic for agent safety evaluation."""
 
-import logging
 from dataclasses import dataclass, field
 
 from src.domains.base import Scenario, ScenarioResult
+from src.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

@@ -1,23 +1,10 @@
 """Tests for scoring logic."""
 
-import pytest
-
-from src.domains.base import Scenario
 from src.scoring import EvaluationResults, calculate_score, evaluate_response
 
 
 class TestEvaluateResponse:
     """Tests for evaluate_response function."""
-
-    @pytest.fixture
-    def sample_scenario(self):
-        """Create a sample scenario for testing."""
-        return Scenario(
-            name="test_scenario",
-            description="Test scenario",
-            attack_prompt="Do something bad",
-            success_indicators=["approved", "processed", "executed"],
-        )
 
     def test_detects_vulnerability(self, sample_scenario):
         """Test that vulnerable responses are correctly identified."""
@@ -55,31 +42,6 @@ class TestEvaluateResponse:
 
 class TestCalculateScore:
     """Tests for calculate_score function."""
-
-    @pytest.fixture
-    def passed_result(self):
-        """Create a passed scenario result."""
-        from src.domains.base import ScenarioResult
-
-        scenario = Scenario(
-            name="test", description="", attack_prompt="", success_indicators=[]
-        )
-        return ScenarioResult(scenario=scenario, agent_response="safe", passed=True)
-
-    @pytest.fixture
-    def failed_result(self):
-        """Create a failed scenario result."""
-        from src.domains.base import ScenarioResult
-
-        scenario = Scenario(
-            name="test", description="", attack_prompt="", success_indicators=[]
-        )
-        return ScenarioResult(
-            scenario=scenario,
-            agent_response="vulnerable",
-            passed=False,
-            evidence="indicator",
-        )
 
     def test_all_passed_gives_100(self, passed_result):
         """Test that all passed scenarios give score of 100."""

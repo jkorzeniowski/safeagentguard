@@ -1,16 +1,17 @@
 """Sandbox orchestrator for isolated agent testing."""
 
 import json
-import logging
 import subprocess
+from collections.abc import Callable
 
 from src.agents.base import BaseAgent
-from src.domains.base import BaseDomain, ScenarioResult
+from src.domains.base import BaseDomain, Scenario, ScenarioResult
 from src.exceptions import AgentTimeoutError, DockerExecutionError
+from src.logging_config import get_logger
 from src.run_agent import get_agent_from_config
 from src.scoring import EvaluationResults, calculate_score, evaluate_response
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Sandbox:
@@ -43,6 +44,49 @@ class Sandbox:
         """Return the current domain."""
         return self._domain
 
+    def _filter_scenarios(
+        self, scenario_names: list[str] | None = None
+    ) -> list[Scenario]:
+        """Get scenarios, optionally filtered by name.
+
+        Args:
+            scenario_names: Optional list of scenario names to include.
+
+        Returns:
+            List of scenarios (all or filtered subset).
+        """
+        scenarios = self._domain.get_scenarios()
+        if scenario_names:
+            scenarios = [s for s in scenarios if s.name in scenario_names]
+        return scenarios
+
+    def _run_scenarios(
+        self,
+        scenarios: list[Scenario],
+        executor: Callable[[str], str],
+    ) -> list[ScenarioResult]:
+        """Execute scenarios using the provided executor function.
+
+        Args:
+            scenarios: List of scenarios to run.
+            executor: Function that takes a prompt and returns response text.
+
+        Returns:
+            List of scenario results.
+        """
+        results: list[ScenarioResult] = []
+        for scenario in scenarios:
+            logger.info("Running scenario: %s", scenario.name)
+            response = executor(scenario.attack_prompt)
+            result = evaluate_response(scenario, response)
+            results.append(result)
+            logger.info(
+                "Scenario '%s' %s",
+                scenario.name,
+                "PASSED" if result.passed else "FAILED",
+            )
+        return results
+
     def run_test(
         self,
         agent_config: dict,
@@ -59,32 +103,17 @@ class Sandbox:
         Returns:
             EvaluationResults with overall score and per-scenario results.
         """
-        scenarios = self._domain.get_scenarios()
-
-        if scenario_names:
-            scenarios = [s for s in scenarios if s.name in scenario_names]
-
+        scenarios = self._filter_scenarios(scenario_names)
         logger.info(
             "Running %d scenarios from domain '%s'",
             len(scenarios),
             self._domain.name,
         )
 
-        results: list[ScenarioResult] = []
+        def executor(prompt: str) -> str:
+            return self._execute_agent(agent_config, prompt)
 
-        for scenario in scenarios:
-            logger.info("Running scenario: %s", scenario.name)
-
-            response = self._execute_agent(agent_config, scenario.attack_prompt)
-            result = evaluate_response(scenario, response)
-            results.append(result)
-
-            logger.info(
-                "Scenario '%s' %s",
-                scenario.name,
-                "PASSED" if result.passed else "FAILED",
-            )
-
+        results = self._run_scenarios(scenarios, executor)
         return calculate_score(results)
 
     def run_test_with_agent(
@@ -103,20 +132,12 @@ class Sandbox:
         Returns:
             EvaluationResults with overall score and per-scenario results.
         """
-        scenarios = self._domain.get_scenarios()
+        scenarios = self._filter_scenarios(scenario_names)
 
-        if scenario_names:
-            scenarios = [s for s in scenarios if s.name in scenario_names]
+        def executor(prompt: str) -> str:
+            return agent.run(prompt).output
 
-        results: list[ScenarioResult] = []
-
-        for scenario in scenarios:
-            logger.info("Running scenario: %s", scenario.name)
-
-            response = agent.run(scenario.attack_prompt)
-            result = evaluate_response(scenario, response.output)
-            results.append(result)
-
+        results = self._run_scenarios(scenarios, executor)
         return calculate_score(results)
 
     def _execute_agent(self, agent_config: dict, prompt: str) -> str:

@@ -5,18 +5,16 @@ It reads configuration from environment/stdin and outputs JSON results.
 """
 
 import json
-import logging
 import os
 import sys
 
 from src.agents.base import BaseAgent
+from src.agents.mock import MockAgent, SafeMockAgent, VulnerableMockAgent
 from src.exceptions import AgentConfigError, AgentExecutionError
+from src.logging_config import configure_logging, get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
+configure_logging()
+logger = get_logger(__name__)
 
 
 def get_agent_from_config(config: dict) -> BaseAgent:
@@ -31,8 +29,6 @@ def get_agent_from_config(config: dict) -> BaseAgent:
     Raises:
         AgentConfigError: If agent type is not supported or config is invalid.
     """
-    from src.agents.mock import MockAgent, SafeMockAgent, VulnerableMockAgent
-
     if not isinstance(config, dict):
         raise AgentConfigError("Agent config must be a dictionary")
 
@@ -121,14 +117,19 @@ def main():
         logger.info("Running agent with type: %s", agent_config.get("type", "unknown"))
         result = run_agent(agent_config, prompt)
 
+        logger.debug("Agent execution result: %s", result)
         print(json.dumps(result))
     except json.JSONDecodeError as e:
         logger.error("Invalid JSON input: %s", e)
-        print(json.dumps({"success": False, "error": f"Invalid JSON input: {e}"}))
+        error_response = {"success": False, "error": f"Invalid JSON input: {e}"}
+        logger.debug("Error response: %s", error_response)
+        print(json.dumps(error_response))
         sys.exit(1)
     except (KeyError, TypeError) as e:
         logger.error("Malformed input data: %s", e)
-        print(json.dumps({"success": False, "error": f"Malformed input: {e}"}))
+        error_response = {"success": False, "error": f"Malformed input: {e}"}
+        logger.debug("Error response: %s", error_response)
+        print(json.dumps(error_response))
         sys.exit(1)
 
 
