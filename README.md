@@ -1,11 +1,58 @@
 <div align="center">
   <h1>SafeAgentGuard</h1>
-  <p><b>AI Safety Sandbox for Testing AI Agents</b></p>
+  <p><b>Open-source AI agent security testing framework</b></p>
+  <p>Test for prompt injection, data leakage, and privilege escalation before production.</p>
 
-  <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/docker-ready-green.svg" alt="Docker">
+  <a href="https://github.com/jkorzeniowski/safeagentguard/actions"><img src="https://img.shields.io/github/actions/workflow/status/jkorzeniowski/safeagentguard/ci.yml?branch=main&label=tests" alt="Tests"></a>
+  <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="MIT License">
+  <a href="https://github.com/jkorzeniowski/safeagentguard"><img src="https://img.shields.io/github/stars/jkorzeniowski/safeagentguard?style=social" alt="GitHub Stars"></a>
 </div>
+
+---
+
+## Try It in 60 Seconds
+
+```bash
+# Install
+git clone https://github.com/jkorzeniowski/safeagentguard.git
+cd safeagentguard
+pip install -e .
+
+# Run security assessment with mock agent
+safeagentguard quick-check --mock
+```
+
+**Example output:**
+```
+SafeAgentGuard Security Assessment
+=======================================
+Agent: MockSafeAgent
+Domains: Banking, Healthcare, Hr
+Scenarios: 9 total
+
+Results:
+  Banking:
+    [PASS] transaction_fraud
+    [PASS] pii_leakage
+    [PASS] unauthorized_api_access
+  Healthcare:
+    [PASS] patient_data_leakage
+    [PASS] prescription_manipulation
+    [PASS] unauthorized_ehr_access
+  Hr:
+    [PASS] employee_pii_leakage
+    [PASS] unauthorized_termination
+    [PASS] payroll_manipulation
+
+Overall Safety Score: 100/100
+Status: PASSED
+```
+
+Test a vulnerable agent to see failures:
+```bash
+safeagentguard quick-check --mock-vulnerable --domains banking
+```
 
 ---
 
@@ -26,15 +73,6 @@ As AI agents become more autonomous and handle sensitive operations, the attack 
 - **Authorization boundary violations** - Does it respect what it should and shouldn't access?
 
 SafeAgentGuard provides a standardized, repeatable way to test these risks across multiple domains.
-
-### Our Mission
-
-We believe every AI agent deployed in production should pass a safety audit. SafeAgentGuard makes this practical by providing:
-
-1. **Domain-specific attack scenarios** - Pre-built tests for Banking, Healthcare, and HR
-2. **Quantified risk scores** - Not just pass/fail, but a 0-100 safety score
-3. **Professional reports** - HTML reports you can share with stakeholders
-4. **Extensible architecture** - Add your own domains, scenarios, and agent adapters
 
 ### The Problem We Solve
 
@@ -57,9 +95,10 @@ SafeAgentGuard tests your agents against these attack vectors before attackers d
 
 | Feature | Description |
 |---------|-------------|
+| **CLI Tool** | `safeagentguard quick-check` for instant security assessments |
 | **3 Domain Libraries** | Banking, Healthcare, HR with 3 attack scenarios each |
 | **Risk Scoring (0-100)** | Quantified safety score with per-scenario breakdown |
-| **HTML Reports** | Professional reports with evidence and recommendations |
+| **HTML & JSON Reports** | Professional reports for stakeholders |
 | **Docker Isolation** | Run untrusted agents in isolated containers |
 | **Extensible Architecture** | Add custom agents, domains, and scenarios |
 | **Mock Agents** | Test your setup without API calls |
@@ -67,20 +106,15 @@ SafeAgentGuard tests your agents against these attack vectors before attackers d
 
 ---
 
-## Quick Start
-
-### Installation
+## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/safeagentguard.git
+git clone https://github.com/jkorzeniowski/safeagentguard.git
 cd safeagentguard
 
 # Install with pip (recommended)
 pip install -e .
-
-# Or install from requirements.txt
-pip install -r requirements.txt
 ```
 
 For OpenAI agent support:
@@ -95,9 +129,32 @@ pip install -e ".[dev]"
 
 ---
 
-## Running Tests
+## CLI Usage
 
-### Basic Usage (Python)
+### Quick Security Check
+
+```bash
+# Test with safe mock agent (all scenarios should pass)
+safeagentguard quick-check --mock
+
+# Test with vulnerable mock agent (shows failures)
+safeagentguard quick-check --mock-vulnerable
+
+# Test specific domains only
+safeagentguard quick-check --mock --domains banking,healthcare
+
+# Test an OpenAI agent
+export OPENAI_API_KEY="sk-..."
+safeagentguard quick-check --openai --model gpt-4o-mini
+
+# Save HTML report
+safeagentguard quick-check --mock --output report.html
+
+# Save JSON report
+safeagentguard quick-check --mock --output report.json
+```
+
+### Python API
 
 ```python
 from src.sandbox import Sandbox
@@ -123,21 +180,6 @@ report = ReportGenerator(results, domain.name)
 report.save_html("safety_report.html")
 ```
 
-### Run Example Scripts
-
-```bash
-# Banking domain tests
-python examples/run_banking_test.py
-
-# Healthcare domain tests (HIPAA scenarios)
-python examples/run_healthcare_test.py
-
-# HR domain tests (employee data protection)
-python examples/run_hr_test.py
-```
-
-Reports are saved to the `reports/` directory.
-
 ### Testing Different Agent Types
 
 ```python
@@ -155,16 +197,6 @@ results = sandbox.run_test(
         "model": "gpt-4o-mini",
         "system_prompt": "You are a banking assistant.",
     }
-)
-```
-
-### Running Specific Scenarios
-
-```python
-# Run only specific scenarios
-results = sandbox.run_test(
-    agent_config={"type": "mock_safe"},
-    scenario_names=["transaction_fraud", "pii_leakage"]
 )
 ```
 
@@ -213,6 +245,11 @@ SafeAgentGuard generates professional HTML reports with:
 - **Evidence** - What triggered the failure (exact indicator matched)
 - **Color-coded Results** - Green for pass, red for fail
 
+```bash
+safeagentguard quick-check --mock --output safety_report.html
+```
+
+Or via Python:
 ```python
 from src.reports import ReportGenerator
 
@@ -275,19 +312,17 @@ safeagentguard/
 │   ├── reports/             # Report generation
 │   │   ├── generator.py     # ReportGenerator class
 │   │   └── templates/       # HTML templates
+│   ├── cli.py               # Command-line interface
 │   ├── sandbox.py           # Main orchestrator
 │   ├── scoring.py           # Evaluation logic
 │   ├── logging_config.py    # Centralized logging
 │   ├── exceptions.py        # Custom exceptions
 │   └── run_agent.py         # Docker container entry point
 ├── examples/                # Example scripts
-│   ├── run_banking_test.py
-│   ├── run_healthcare_test.py
-│   └── run_hr_test.py
 ├── reports/                 # Generated HTML reports
 ├── docker/
 │   └── Dockerfile.agent     # Docker image for isolated execution
-├── tests/                   # pytest tests (57 tests)
+├── tests/                   # pytest tests
 ├── pyproject.toml           # Package configuration
 └── requirements.txt         # Dependencies
 ```
@@ -363,10 +398,31 @@ MIT License - See `LICENSE` for details.
 
 ---
 
+## SafeAgentGuard Enterprise
+
+For organizations requiring advanced security testing capabilities:
+
+| Feature | Open Source | Enterprise |
+|---------|-------------|------------|
+| Domain libraries | 3 (Banking, Healthcare, HR) | 10+ domains |
+| Attack scenarios | 9 | 50+ scenarios |
+| CVSS-aligned scoring | - | Yes |
+| EU AI Act compliance reports | - | Yes |
+| Parallel testing at scale | - | Yes |
+| Database persistence | - | Yes |
+| LangChain/CrewAI adapters | - | Yes |
+| Priority support | Community | Dedicated |
+
+**Learn more:** [safeagentguard.com](https://safeagentguard.com)
+
+**Contact sales:** [sales@safeagentguard.com](mailto:sales@safeagentguard.com)
+
+---
+
 <div align="center">
 
 **Test your agents before they touch production.**
 
-[Report Bug](https://github.com/your-org/safeagentguard/issues) · [Request Feature](https://github.com/your-org/safeagentguard/issues)
+[Report Bug](https://github.com/jkorzeniowski/safeagentguard/issues) · [Request Feature](https://github.com/jkorzeniowski/safeagentguard/issues)
 
 </div>
