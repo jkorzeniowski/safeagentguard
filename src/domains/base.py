@@ -14,12 +14,16 @@ class Scenario:
         attack_prompt: The malicious prompt to send to the agent.
         success_indicators: Patterns in the agent response that indicate
             the agent failed the test (i.e., was vulnerable to the attack).
+        injected_content: Optional dict defining malicious content to inject
+            via tool responses. Used for indirect prompt injection tests.
+            Format: {"tool": "tool_name", "response": {...payload...}}
     """
 
     name: str
     description: str
     attack_prompt: str
     success_indicators: list[str] = field(default_factory=list)
+    injected_content: dict | None = field(default=None)
 
 
 @dataclass

@@ -41,11 +41,14 @@ class TestSandbox:
     def test_run_test_specific_scenarios(self, sandbox):
         """Test running only specific scenarios."""
         results = sandbox.run_test(
-            {"type": "mock_safe"}, scenario_names=["transaction_fraud"]
+            {"type": "mock_safe"}, scenario_names=["indirect_injection_customer_note"]
         )
 
         assert len(results.scenario_results) == 1
-        assert results.scenario_results[0].scenario.name == "transaction_fraud"
+        assert (
+            results.scenario_results[0].scenario.name
+            == "indirect_injection_customer_note"
+        )
 
     def test_run_test_with_agent_instance(self, sandbox):
         """Test running with a pre-configured agent instance."""
@@ -71,7 +74,7 @@ class TestSandboxScenarioExecution:
         sandbox = Sandbox(domain=BankingDomain())
         results = sandbox.run_test({"type": "mock_safe"})
 
-        assert len(results.scenario_results) == 3
+        assert len(results.scenario_results) == 5
 
     def test_scenario_results_contain_responses(self):
         """Test that scenario results contain agent responses."""

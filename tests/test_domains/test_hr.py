@@ -11,11 +11,11 @@ class TestHRDomain:
         domain = HRDomain()
         assert domain.name == "hr"
 
-    def test_has_three_scenarios(self):
-        """Test that domain has exactly 3 scenarios."""
+    def test_has_five_scenarios(self):
+        """Test that domain has exactly 5 scenarios."""
         domain = HRDomain()
         scenarios = domain.get_scenarios()
-        assert len(scenarios) == 3
+        assert len(scenarios) == 5
 
     def test_scenario_names(self):
         """Test that scenarios have expected names."""
@@ -23,17 +23,19 @@ class TestHRDomain:
         scenarios = domain.get_scenarios()
         names = [s.name for s in scenarios]
 
-        assert "employee_pii_leakage" in names
-        assert "unauthorized_termination" in names
-        assert "payroll_manipulation" in names
+        assert "resume_injection_attack" in names
+        assert "self_service_confusion" in names
+        assert "offboarding_access_attack" in names
+        assert "integration_trust_attack" in names
+        assert "benefits_fraud_life_event" in names
 
     def test_get_scenario_by_name(self):
         """Test retrieving a specific scenario by name."""
         domain = HRDomain()
-        scenario = domain.get_scenario_by_name("employee_pii_leakage")
+        scenario = domain.get_scenario_by_name("resume_injection_attack")
 
         assert scenario is not None
-        assert scenario.name == "employee_pii_leakage"
+        assert scenario.name == "resume_injection_attack"
 
     def test_scenarios_have_required_fields(self):
         """Test that all scenarios have required fields."""
@@ -45,26 +47,42 @@ class TestHRDomain:
             assert scenario.success_indicators
             assert len(scenario.success_indicators) > 0
 
-    def test_employee_pii_leakage_scenario(self):
-        """Test employee PII leakage scenario content."""
+    def test_resume_injection_scenario(self):
+        """Test resume injection scenario content."""
         domain = HRDomain()
-        scenario = domain.get_scenario_by_name("employee_pii_leakage")
+        scenario = domain.get_scenario_by_name("resume_injection_attack")
 
-        assert "employee" in scenario.attack_prompt.lower()
-        assert "salary" in [i.lower() for i in scenario.success_indicators]
+        assert "resume" in scenario.attack_prompt.lower()
+        assert scenario.injected_content is not None
 
-    def test_unauthorized_termination_scenario(self):
-        """Test unauthorized termination scenario content."""
+    def test_self_service_confusion_scenario(self):
+        """Test self service confusion scenario content."""
         domain = HRDomain()
-        scenario = domain.get_scenario_by_name("unauthorized_termination")
+        scenario = domain.get_scenario_by_name("self_service_confusion")
 
-        assert "terminate" in scenario.attack_prompt.lower()
-        assert any("terminated" in i.lower() for i in scenario.success_indicators)
+        assert "self-service" in scenario.attack_prompt.lower()
+        assert "salary" in scenario.attack_prompt.lower()
 
-    def test_payroll_manipulation_scenario(self):
-        """Test payroll manipulation scenario content."""
+    def test_offboarding_access_scenario(self):
+        """Test offboarding access attack scenario content."""
         domain = HRDomain()
-        scenario = domain.get_scenario_by_name("payroll_manipulation")
+        scenario = domain.get_scenario_by_name("offboarding_access_attack")
 
-        assert "payroll" in scenario.attack_prompt.lower()
-        assert any("payroll" in i.lower() for i in scenario.success_indicators)
+        assert "last day" in scenario.attack_prompt.lower()
+        assert "access" in scenario.attack_prompt.lower()
+
+    def test_integration_trust_scenario(self):
+        """Test integration trust attack scenario content."""
+        domain = HRDomain()
+        scenario = domain.get_scenario_by_name("integration_trust_attack")
+
+        assert "workday" in scenario.attack_prompt.lower()
+        assert scenario.injected_content is not None
+
+    def test_benefits_fraud_scenario(self):
+        """Test benefits fraud life event scenario content."""
+        domain = HRDomain()
+        scenario = domain.get_scenario_by_name("benefits_fraud_life_event")
+
+        assert "life event" in scenario.attack_prompt.lower()
+        assert "married" in scenario.attack_prompt.lower()

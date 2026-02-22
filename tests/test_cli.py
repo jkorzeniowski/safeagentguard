@@ -243,8 +243,14 @@ class TestSaveJsonReport:
         save_json_report([(domain, results)], "TestAgent", output_file)
 
         data = json.loads(output_file.read_text())
-        for key in ("agent", "overall_score", "overall_passed", "total_scenarios",
-                    "passed_scenarios", "domains"):
+        for key in (
+            "agent",
+            "overall_score",
+            "overall_passed",
+            "total_scenarios",
+            "passed_scenarios",
+            "domains",
+        ):
             assert key in data, f"Missing key: {key}"
 
     def test_json_agent_name_matches(self, tmp_path):
@@ -375,7 +381,13 @@ class TestCLIHelp:
         """quick-check --help lists the main option flags."""
         runner = CliRunner()
         result = runner.invoke(main, ["quick-check", "--help"])
-        for flag in ("--mock", "--mock-vulnerable", "--openai", "--domains", "--output"):
+        for flag in (
+            "--mock",
+            "--mock-vulnerable",
+            "--openai",
+            "--domains",
+            "--output",
+        ):
             assert flag in result.output, f"Missing flag in help: {flag}"
 
 
@@ -491,9 +503,7 @@ class TestQuickCheckDomainFilter:
     def test_domain_filter_case_insensitive(self):
         """Domain names in --domains are treated case-insensitively."""
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["quick-check", "--mock", "--domains", "Banking"]
-        )
+        result = runner.invoke(main, ["quick-check", "--mock", "--domains", "Banking"])
         assert result.exit_code == 0, result.output
 
     def test_domain_filter_with_spaces_around_comma(self):
@@ -514,7 +524,14 @@ class TestQuickCheckJsonOutput:
         runner = CliRunner()
         result = runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         assert result.exit_code == 0, result.output
         assert output_file.exists()
@@ -525,7 +542,14 @@ class TestQuickCheckJsonOutput:
         runner = CliRunner()
         runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         data = json.loads(output_file.read_text())
         assert isinstance(data, dict)
@@ -536,7 +560,14 @@ class TestQuickCheckJsonOutput:
         runner = CliRunner()
         runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         data = json.loads(output_file.read_text())
         for key in ("agent", "overall_score", "overall_passed", "domains"):
@@ -548,7 +579,14 @@ class TestQuickCheckJsonOutput:
         runner = CliRunner()
         result = runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         assert "Report saved to" in result.output
 
@@ -559,9 +597,12 @@ class TestQuickCheckJsonOutput:
         result = runner.invoke(
             main,
             [
-                "quick-check", "--mock",
-                "--domains", "banking,healthcare",
-                "--output", str(output_file),
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking,healthcare",
+                "--output",
+                str(output_file),
             ],
         )
         assert result.exit_code == 0, result.output
@@ -578,7 +619,14 @@ class TestQuickCheckHtmlOutput:
         runner = CliRunner()
         result = runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         assert result.exit_code == 0, result.output
         assert output_file.exists()
@@ -589,7 +637,14 @@ class TestQuickCheckHtmlOutput:
         runner = CliRunner()
         runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         content = output_file.read_text()
         assert "<html" in content.lower()
@@ -600,7 +655,14 @@ class TestQuickCheckHtmlOutput:
         runner = CliRunner()
         result = runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         assert "Report saved to" in result.output
 
@@ -611,9 +673,12 @@ class TestQuickCheckHtmlOutput:
         result = runner.invoke(
             main,
             [
-                "quick-check", "--mock",
-                "--domains", "banking,healthcare",
-                "--output", str(output_file),
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking,healthcare",
+                "--output",
+                str(output_file),
             ],
         )
         assert result.exit_code == 0, result.output
@@ -625,7 +690,14 @@ class TestQuickCheckHtmlOutput:
         runner = CliRunner()
         result = runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         assert result.exit_code == 0, result.output
         assert output_file.exists()
@@ -640,7 +712,14 @@ class TestQuickCheckUnknownOutputExtension:
         runner = CliRunner()
         result = runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         # The warning goes to stderr via err=True; CliRunner mixes both by default.
         assert "Warning" in result.output or "Unknown" in result.output
@@ -651,7 +730,14 @@ class TestQuickCheckUnknownOutputExtension:
         runner = CliRunner()
         result = runner.invoke(
             main,
-            ["quick-check", "--mock", "--domains", "banking", "--output", str(output_file)],
+            [
+                "quick-check",
+                "--mock",
+                "--domains",
+                "banking",
+                "--output",
+                str(output_file),
+            ],
         )
         assert result.exit_code == 0, result.output
 
@@ -671,9 +757,7 @@ class TestQuickCheckOpenAI:
         runner = CliRunner()
         with patch.dict(sys.modules, {"openai": None}):
             result = runner.invoke(main, ["quick-check", "--openai"])
-        assert "openai" in result.output.lower() or "openai" in (
-            result.exception or ""
-        )
+        assert "openai" in result.output.lower() or "openai" in (result.exception or "")
 
 
 class TestQuickCheckErrorHandling:
