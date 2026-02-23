@@ -8,12 +8,14 @@ version = "0.1.0"
 description = "AI Safety Sandbox for testing AI agents"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
@@ -47,7 +49,7 @@ addopts = "-v --tb=short"
 
 [tool.black]
 line-length = 88
-target-version = ["py312"]
+target-version = ["py310", "py311", "py312"]
 include = '\.pyi?$'
 
 [tool.coverage.run]
