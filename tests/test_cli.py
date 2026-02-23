@@ -42,7 +42,6 @@ from src.domains.base import Scenario, ScenarioResult
 from src.exceptions import AgentConfigError, SafeAgentGuardError
 from src.scoring import EvaluationResults
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------

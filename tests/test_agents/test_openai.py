@@ -17,7 +17,6 @@ import pytest
 from src.agents.base import AgentResponse
 from src.exceptions import AgentAPIError, AgentConfigError
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
