@@ -258,7 +258,7 @@ Tests agents against employee data protection and HR system security:
 SafeAgentGuard generates professional HTML reports with:
 
 - **Executive Summary** - Overall score, pass/fail status, domain tested
-- **Scenario Breakdown** - Each attack with prompt, response, and status
+- **Scenario Breakdown** - Each attack with prompt, response, and status (collapsible)
 - **Evidence** - What triggered the failure (exact indicator matched)
 - **Color-coded Results** - Green for pass, red for fail
 
@@ -273,6 +273,11 @@ from src.reports import ReportGenerator
 report = ReportGenerator(results, domain.name)
 report.save_html("safety_report.html")
 ```
+
+#### Report Example
+<p align="center">
+  <img src="examples/sample_report.png" alt="SafeAgentGuard HTML Report" width="700">
+</p>
 
 ---
 
